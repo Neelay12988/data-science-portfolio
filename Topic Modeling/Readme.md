@@ -1,10 +1,6 @@
 # Topic Modeling Comparison
 
-This project compares various topic modeling techniques using the 20 Newsgroups dataset. The techniques compared are:
-
-- **Latent Dirichlet Allocation (LDA)**
-- **Non-negative Matrix Factorization (NMF)**
-- **Latent Semantic Analysis (LSA)**
+This project compares various topic modeling techniques using the 20 Newsgroups dataset.
 
 ## Dataset
 
@@ -26,6 +22,6 @@ LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the 
 
 ## Visualizations
 
-- **Topic**: Shows topics geenrated.
+- **Topics**: Shows topics geenrated.
 - **Category Distribution**: Shows the distribution of documents across different categories.
 - **Wordclouds**: Visual representations of the most important words in the topics.
