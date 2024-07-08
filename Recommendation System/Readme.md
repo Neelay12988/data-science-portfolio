@@ -1,116 +1,40 @@
-# Movie Recommendation System
+# Topic Modeling Comparison
 
-This repository contains the code for a movie recommendation system using various collaborative filtering and matrix factorization techniques. It includes extensive exploratory data analysis (EDA) and visualizations to better understand the dataset and the recommendation results.
+This project compares various topic modeling techniques using the 20 Newsgroups dataset. The techniques compared are:
 
-## Table of Contents
-
-- [Dataset](#dataset)
-- [Requirements](#requirements)
-- [Exploratory Data Analysis (EDA)](#exploratory-data-analysis-eda)
-- [Recommendation Models](#recommendation-models)
-  - [User-Based Collaborative Filtering](#user-based-collaborative-filtering)
-  - [Item-Based Collaborative Filtering](#item-based-collaborative-filtering)
-  - [Matrix Factorization (SVD)](#matrix-factorization-svd)
-  - [Matrix Factorization (ALS)](#matrix-factorization-als)
-  - [Content-Based Filtering](#content-based-filtering)
-  - [Hybrid Model](#hybrid-model)
-- [Evaluation](#evaluation)
-- [Visualizations](#visualizations)
-- [Usage](#usage)
+- **Latent Dirichlet Allocation (LDA)**
+- **Non-negative Matrix Factorization (NMF)**
+- **Latent Semantic Analysis (LSA)**
 
 ## Dataset
 
-The dataset used in this project is the [MovieLens 100k dataset](https://grouplens.org/datasets/movielens/100k/). It consists of 100,000 ratings from 943 users on 1682 movies.
+The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html) is used for this comparison. It contains approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.
 
-## Requirements
+## Models
 
-The following Python libraries are required to run the code:
+### LDA (Latent Dirichlet Allocation)
 
-- pandas
-- matplotlib
-- seaborn
-- surprise
-- sklearn
-- implicit
+LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a mixture of words.
 
-You can install these libraries using pip:
+### NMF (Non-negative Matrix Factorization)
 
-```bash
-pip install pandas matplotlib seaborn scikit-surprise scikit-learn implicit
+NMF is a linear algebra technique that factorizes the document-term matrix into non-negative matrices. It’s useful for parts-based representation.
 
-Exploratory Data Analysis (EDA)
-The EDA script includes the following steps:
-Loading and understanding the dataset
-Descriptive statistics of the ratings
-Visualizing rating distributions
-Visualizing popular movies
-Visualizing user behavior
-Correlation analysis
-Recommendation Models
-The following recommendation models are implemented in this project:
-User-Based Collaborative Filtering
-Uses k-nearest neighbors (KNN) to find similar users and recommend movies based on their ratings.
-Item-Based Collaborative Filtering
-Uses k-nearest neighbors (KNN) to find similar items and recommend movies based on item similarity.
-Matrix Factorization (SVD)
-Uses Singular Value Decomposition (SVD) to predict ratings and recommend movies.
-Content-Based Filtering
-Uses TF-IDF vectorization to recommend movies based on their titles.
-Hybrid Model
-Combines collaborative filtering and content-based filtering to provide recommendations.
-Evaluation
-The models are evaluated using Root Mean Squared Error (RMSE) and Mean Absolute Error (MAE) metrics.
-Visualizations
-The script includes visualizations for:
-Rating distribution
-Top 10 most rated movies
-Distribution of the number of ratings per user
-Distribution of average ratings given by users
-Top 10 recommendations for each model
-Usage
-To run the code, follow these steps:
-Clone the repository:
-bash
-Copy code
-git clone https://github.com/yourusername/movierecommendation.git
-cd movierecommendation
-Install the required libraries:
-bash
-Copy code
-pip install -r requirements.txt
-Run the Jupyter Notebook or Python script to perform EDA and generate recommendations.
-Example Code
-EDA and Visualizations
-python
-Copy code
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+### LSA (Latent Semantic Analysis)
 
-# Load datasets
-u_data = pd.read_csv('path/to/u.data', sep='\t', names=['user_id', 'item_id', 'rating', 'timestamp'])
-u_item = pd.read_csv('path/to/u.item', sep='|', names=['item_id', 'title'], usecols=[0, 1], encoding='latin-1')
+LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the document-term matrix, capturing the underlying structure in the data.
 
-# Merge datasets to get movie titles
-data = pd.merge(u_data, u_item, on='item_id').drop('timestamp', axis=1)
+## Evaluation
 
-# Rating distribution
-plt.figure(figsize=(10, 6))
-sns.countplot(data['rating'])
-plt.title('Rating Distribution')
-plt.xlabel('Rating')
-plt.ylabel('Count')
-plt.show()
+The models are evaluated using coherence scores for LDA and BERTopic, and the top words for each topic.
 
-# Top 10 most rated movies
-top_movies = data['title'].value_counts().head(10)
-plt.figure(figsize=(12, 6))
-sns.barplot(x=top_movies.values, y=top_movies.index, palette='viridis')
-plt.title('Top 10 Most Rated Movies')
-plt.xlabel('Number of Ratings')
-plt.ylabel('Movie Title')
-plt.show()
-Recommendation Models
-Refer to the detailed implementation in the script for each recommendation model.
-Evaluation and Visualizations
-Refer to the detailed implementation in the script for evaluation and visualizations.
+## Results
+
+The results and visualizations provide insights into the topics identified by each model and their interpretability.
+
+## Visualizations
+
+- **Category Distribution**: Shows the distribution of documents across different categories.
+- **Document Length Analysis**: Shows the distribution of document lengths.
+- **Wordclouds**: Visual representations of the most important words in the topics for LDA, NMF, and LSA.
+- **Coherence Score Comparison**: Compares coherence scores of LDA and BERTopic models.
