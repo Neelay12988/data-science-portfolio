@@ -1,40 +1,29 @@
-# Topic Modeling Comparison
+# Movie Recommendation System
 
-This project compares various topic modeling techniques using the 20 Newsgroups dataset. The techniques compared are:
-
-- **Latent Dirichlet Allocation (LDA)**
-- **Non-negative Matrix Factorization (NMF)**
-- **Latent Semantic Analysis (LSA)**
+This repository contains the code for a movie recommendation system using various collaborative filtering and matrix factorization techniques. It includes extensive exploratory data analysis (EDA) and visualizations to better understand the dataset and the recommendation results.
 
 ## Dataset
 
-The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html) is used for this comparison. It contains approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.
+The dataset used in this project is the MovieLens 100k dataset. It consists of 100,000 ratings from 943 users on 1682 movies.
 
-## Models
+## Recommendation Models
 
-### LDA (Latent Dirichlet Allocation)
+The following recommendation models are implemented in this project:
 
-LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a mixture of words.
-
-### NMF (Non-negative Matrix Factorization)
-
-NMF is a linear algebra technique that factorizes the document-term matrix into non-negative matrices. It’s useful for parts-based representation.
-
-### LSA (Latent Semantic Analysis)
-
-LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the document-term matrix, capturing the underlying structure in the data.
+- User-Based Collaborative Filtering: Uses k-nearest neighbors (KNN) to find similar users and recommend movies based on their ratings.
+- Item-Based Collaborative Filtering: Uses k-nearest neighbors (KNN) to find similar items and recommend movies based on item similarity.
+- Matrix Factorization (SVD): Uses Singular Value Decomposition (SVD) to predict ratings and recommend movies.
+- Content-Based Filtering: Uses TF-IDF vectorization to recommend movies based on their titles.
+- Hybrid Model: Combines collaborative filtering and content-based filtering to provide recommendations.
 
 ## Evaluation
 
-The models are evaluated using coherence scores for LDA and BERTopic, and the top words for each topic.
-
-## Results
-
-The results and visualizations provide insights into the topics identified by each model and their interpretability.
+The models are evaluated using Root Mean Squared Error (RMSE) and Mean Absolute Error (MAE) metrics.
 
 ## Visualizations
 
-- **Category Distribution**: Shows the distribution of documents across different categories.
-- **Document Length Analysis**: Shows the distribution of document lengths.
-- **Wordclouds**: Visual representations of the most important words in the topics for LDA, NMF, and LSA.
-- **Coherence Score Comparison**: Compares coherence scores of LDA and BERTopic models.
+- **Rating distribution**: description here.
+- **Top 10 most rated movies**: description here.
+- **Distribution of the number of ratings per user**: description here.
+- **Distribution of average ratings given by users**: description here.
+- **Top 10 recommendations for each model**: description here.
