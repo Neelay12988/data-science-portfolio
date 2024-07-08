@@ -24,10 +24,6 @@ NMF is a linear algebra technique that factorizes the document-term matrix into 
 
 LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the document-term matrix, capturing the underlying structure in the data.
 
-## Evaluation
-
-The models are evaluated using coherence scores for LDA and BERTopic, and the top words for each topic.
-
 ## Results
 
 The results and visualizations provide insights into the topics identified by each model and their interpretability.
