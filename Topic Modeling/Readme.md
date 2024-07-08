@@ -1,4 +1,4 @@
-# Topic Modeling Comparison
+# Newsgroup Topic Discovery
 
 This project compares various topic modeling techniques using the 20 Newsgroups dataset.
 
@@ -6,7 +6,7 @@ This project compares various topic modeling techniques using the 20 Newsgroups 
 
 The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html) is used for this comparison. It contains approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.
 
-## Models
+## Topic Models
 
 - LDA (Latent Dirichlet Allocation): LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a mixture of words.
 - NMF (Non-negative Matrix Factorization): NMF is a linear algebra technique that factorizes the document-term matrix into non-negative matrices. It’s useful for parts-based representation.
