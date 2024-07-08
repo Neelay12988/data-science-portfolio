@@ -1,40 +1,39 @@
-# Topic Modeling Comparison
+# Movie Recommendation System
 
-This project compares various topic modeling techniques using the 20 Newsgroups dataset. The techniques compared are:
+This repository contains the code for a movie recommendation system using various collaborative filtering and matrix factorization techniques. It includes extensive exploratory data analysis (EDA) and visualizations to better understand the dataset and the recommendation results.
 
-- **Latent Dirichlet Allocation (LDA)**
-- **Non-negative Matrix Factorization (NMF)**
-- **Latent Semantic Analysis (LSA)**
+## Table of Contents
+
+- [Dataset](#dataset)
+- [Requirements](#requirements)
+- [Exploratory Data Analysis (EDA)](#exploratory-data-analysis-eda)
+- [Recommendation Models](#recommendation-models)
+  - [User-Based Collaborative Filtering](#user-based-collaborative-filtering)
+  - [Item-Based Collaborative Filtering](#item-based-collaborative-filtering)
+  - [Matrix Factorization (SVD)](#matrix-factorization-svd)
+  - [Matrix Factorization (ALS)](#matrix-factorization-als)
+  - [Content-Based Filtering](#content-based-filtering)
+  - [Hybrid Model](#hybrid-model)
+- [Evaluation](#evaluation)
+- [Visualizations](#visualizations)
+- [Usage](#usage)
 
 ## Dataset
 
-The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html) is used for this comparison. It contains approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.
+The dataset used in this project is the [MovieLens 100k dataset](https://grouplens.org/datasets/movielens/100k/). It consists of 100,000 ratings from 943 users on 1682 movies.
 
-## Models
+## Requirements
 
-### LDA (Latent Dirichlet Allocation)
+The following Python libraries are required to run the code:
 
-LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a mixture of words.
+- pandas
+- matplotlib
+- seaborn
+- surprise
+- sklearn
+- implicit
 
-### NMF (Non-negative Matrix Factorization)
+You can install these libraries using pip:
 
-NMF is a linear algebra technique that factorizes the document-term matrix into non-negative matrices. It’s useful for parts-based representation.
-
-### LSA (Latent Semantic Analysis)
-
-LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the document-term matrix, capturing the underlying structure in the data.
-
-## Evaluation
-
-The models are evaluated using coherence scores for LDA and BERTopic, and the top words for each topic.
-
-## Results
-
-The results and visualizations provide insights into the topics identified by each model and their interpretability.
-
-## Visualizations
-
-- **Category Distribution**: Shows the distribution of documents across different categories.
-- **Document Length Analysis**: Shows the distribution of document lengths.
-- **Wordclouds**: Visual representations of the most important words in the topics for LDA, NMF, and LSA.
-- **Coherence Score Comparison**: Compares coherence scores of LDA and BERTopic models.
+```bash
+pip install pandas matplotlib seaborn scikit-surprise scikit-learn implicit
