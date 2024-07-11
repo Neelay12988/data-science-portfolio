@@ -1,19 +1,24 @@
-# Newsgroup Topic Discovery
+# Sentiment Analysis of Movie Reviews
 
-This project compares various topic modeling techniques using the 20 Newsgroups dataset.
+This project aims to perform sentiment analysis on movie reviews using various machine learning models.
 
 ## Dataset
 
-The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html) is used for this comparison. It contains approximately 20,000 newsgroup documents, partitioned across 20 different newsgroups.
+The dataset used in this project is the IMDb Movie Reviews Dataset. The dataset consists of 50,000 movie reviews, with 25,000 reviews for training and 25,000 reviews for testing. The reviews are labeled as positive or negative.
 
-## Topic Models
+## Models
 
-- LDA (Latent Dirichlet Allocation): LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a mixture of words.
-- NMF (Non-negative Matrix Factorization): NMF is a linear algebra technique that factorizes the document-term matrix into non-negative matrices. It’s useful for parts-based representation.
-- LSA (Latent Semantic Analysis): LSA uses Singular Value Decomposition (SVD) to reduce the dimensionality of the document-term matrix, capturing the underlying structure in the data.
+- Logistic Regression
+- Naive Bayes
+- Support Vector Machine (SVM)
+- Random Forest
+- XGBoost
 
 ## Visualizations
 
-- **Topics**: Shows topics geenrated.
-- **Category Distribution**: Shows the distribution of documents across different categories.
-- **Wordclouds**: Visual representations of the most important words in the topics.
+- **Sentiment Distribution**: Distribution of sentiments in the dataset.
+- **Word Cloud**: SWord cloud of the most frequent words in the reviews.
+- **Confusion Matrices**: Confusion matrices for each model to visualize their performance.
+- **Review Length Distribution**: Distribution of the lengths of the reviews.
+- **TF-IDF Feature Importance**: Most important features (words) based on their TF-IDF scores.
+- **ROC Curves**: ROC curves for each model to visualize their performance.
