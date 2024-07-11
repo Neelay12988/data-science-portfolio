@@ -14,6 +14,6 @@ The [20 Newsgroups dataset](https://scikit-learn.org/0.19/datasets/twenty_newsgr
 
 ## Visualizations
 
-- **Topics**: Shows topics geenrated.
+- **Topics**: Shows topics generated.
 - **Category Distribution**: Shows the distribution of documents across different categories.
 - **Wordclouds**: Visual representations of the most important words in the topics.
