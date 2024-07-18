@@ -99,3 +99,94 @@ topic_distribution = df['dominant_topic'].value_counts().sort_index()
 print("Overall topic distribution in the original data:")
 for topic, count in topic_distribution.items():
     print(f"Topic {topic+1}: {count} documents")
+
+
+
+
+
+
+
+
+
+import pandas as pd
+import gensim
+from gensim import corpora
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import string
+from collections import defaultdict
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load data
+df = pd.read_csv('file.csv')
+
+# Ensure NLTK stopwords are downloaded
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Extract the columns
+data = df['transcript_keywords'].dropna().tolist()
+
+# Preprocessing function
+stop_words = set(stopwords.words('english'))
+
+def preprocess(text):
+    # Convert to lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize
+    tokens = word_tokenize(text)
+    # Remove stopwords and non-alphabetic tokens
+    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+    return tokens
+
+# Apply preprocessing to the data
+processed_data = [preprocess(text) for text in data]
+
+# Create a dictionary and corpus for LDA
+dictionary = corpora.Dictionary(processed_data)
+corpus = [dictionary.doc2bow(text) for text in processed_data]
+
+# Set the number of topics
+num_topics = 5
+
+# Train the LDA model
+lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
+
+# Function to print topics in a readable format
+def print_topics(model, num_topics, num_words):
+    for i in range(num_topics):
+        words = model.show_topic(i, num_words)
+        print(f"Topic {i+1}:")
+        print(", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]))
+        print()
+
+# Print the topics with clearer formatting
+print_topics(lda_model, num_topics, 10)
+
+# Assign topics to each document
+topic_assignments = [lda_model.get_document_topics(bow) for bow in corpus]
+
+# Initialize a dictionary to hold the counts of each topic by week number
+topic_counts_by_week = defaultdict(lambda: defaultdict(int))
+
+# Loop through the topic assignments and count occurrences of each topic by week number
+for i, doc_topics in enumerate(topic_assignments):
+    wk_num = df.loc[i, 'wk_num']
+    for topic_num, prob in doc_topics:
+        topic_counts_by_week[wk_num][topic_num] += 1
+
+# Convert the topic_counts_by_week to a DataFrame for visualization
+topic_counts_df = pd.DataFrame(topic_counts_by_week).fillna(0).astype(int).T
+topic_counts_df.columns = [f"Topic {i+1}" for i in range(num_topics)]
+
+# Create the heatmap
+plt.figure(figsize=(12, 8))
+sns.heatmap(topic_counts_df, annot=True, fmt="d", cmap="YlGnBu")
+plt.title("Topic Distribution by Week")
+plt.xlabel("Topics")
+plt.ylabel("Week Number")
+plt.show()
