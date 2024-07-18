@@ -1,0 +1,101 @@
+import pandas as pd
+import gensim
+from gensim import corpora
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import string
+from collections import defaultdict
+
+# Load data
+df = pd.read_csv('file.csv')
+
+# Ensure NLTK stopwords are downloaded
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Extract the column
+data = df['transcript_keywords'].dropna().tolist()
+
+# Preprocessing function
+stop_words = set(stopwords.words('english'))
+
+def preprocess(text):
+    # Convert to lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize
+    tokens = word_tokenize(text)
+    # Remove stopwords and non-alphabetic tokens
+    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+    return tokens
+
+# Apply preprocessing to the data
+processed_data = [preprocess(text) for text in data]
+
+# Create a dictionary and corpus for LDA
+dictionary = corpora.Dictionary(processed_data)
+corpus = [dictionary.doc2bow(text) for text in processed_data]
+
+# Set the number of topics
+num_topics = 5
+
+# Train the LDA model
+lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
+
+# Function to print topics in a readable format
+def print_topics(model, num_topics, num_words):
+    for i in range(num_topics):
+        words = model.show_topic(i, num_words)
+        print(f"Topic {i+1}:")
+        print(", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]))
+        print()
+
+# Print the topics with clearer formatting
+print_topics(lda_model, num_topics, 10)
+
+# Assign topics to each document
+topic_assignments = [lda_model.get_document_topics(bow) for bow in corpus]
+
+# Print topic assignments for the first few documents
+for i, topic in enumerate(topic_assignments[:5]):
+    print(f"Document {i+1}: {topic}")
+
+# Initialize a dictionary to hold the counts of each topic by week number
+topic_counts_by_week = defaultdict(lambda: defaultdict(int))
+
+# Loop through the topic assignments and count occurrences of each topic by week number
+for i, doc_topics in enumerate(topic_assignments):
+    wk_num = df.loc[i, 'wk_num']
+    for topic_num, prob in doc_topics:
+        topic_counts_by_week[wk_num][topic_num] += 1
+
+# Print the topic distribution by week number
+print("Topic distribution across documents by week number:")
+for wk_num, topic_counts in topic_counts_by_week.items():
+    print(f"Week {wk_num}:")
+    for topic_num, count in topic_counts.items():
+        print(f"  Topic {topic_num+1}: {count} documents")
+
+# Create a list to hold the dominant topic for each document
+dominant_topics = []
+
+for doc_topics in topic_assignments:
+    # Find the topic with the highest probability
+    dominant_topic = max(doc_topics, key=lambda x: x[1])[0]
+    dominant_topics.append(dominant_topic)
+
+# Add the dominant topic to the original dataframe
+df['dominant_topic'] = dominant_topics
+
+# Preview the updated dataframe
+print(df.head())
+
+# Calculate the distribution of topics in the original data
+topic_distribution = df['dominant_topic'].value_counts().sort_index()
+
+# Print the topic distribution
+print("Overall topic distribution in the original data:")
+for topic, count in topic_distribution.items():
+    print(f"Topic {topic+1}: {count} documents")
