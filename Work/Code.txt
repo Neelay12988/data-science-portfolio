@@ -1,82 +1,69 @@
 import pandas as pd
-import gensim
-from gensim import corpora
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import string
+
+# Sample data creation
+data = {
+    'conversationid': [1, 1, 1, 1, 1, 2, 2, 2, 2],
+    'sequence#': [1, 2, 3, 4, 5, 1, 2, 3, 4],
+    'sender': ['customer', 'agent', 'customer', 'agent', 'customer', 'customer', 'agent', 'customer', 'agent'],
+    'message': [
+        "Hi, I need help with my order.",
+        "Sure, I'd be happy to help. Can you please provide your order number?",
+        "My order number is 67890.",
+        "Thank you. I see that your order has been delayed due to shipping issues.",
+        "Oh no, when can I expect it to arrive?",
+        "I can't log into my account.",
+        "Let me assist you with that. Can you please provide your username?",
+        "My username is johndoe123.",
+        "Thank you. I have reset your password. Please check your email for the new password."
+    ]
+}
+
+# Convert to DataFrame
+df = pd.DataFrame(data)
+
+# Save to CSV for testing
+df.to_csv('sample_chat_data.csv', index=False)
+
+
+
+
+
+
+
+
+
+import pandas as pd
+from transformers import pipeline
 from collections import defaultdict
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-# Load data
-df = pd.read_csv('file.csv')
+# Read the sample CSV file
+file_path = 'sample_chat_data.csv'
+df = pd.read_csv(file_path)
 
-# Ensure NLTK stopwords are downloaded
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
+# Initialize a dictionary to hold conversations
+conversations = defaultdict(list)
 
-# Extract the columns
-data = df['transcript_keywords'].dropna().tolist()
-weeks = df['wk_num'].dropna().tolist()
+# Group messages by conversationid
+for _, row in df.iterrows():
+    conversation_id = row['conversationid']
+    message = row['message']
+    conversations[conversation_id].append(message)
 
-# Preprocessing function
-stop_words = set(stopwords.words('english'))
+# Load the summarization pipeline
+summarizer = pipeline("summarization")
 
-def preprocess(text):
-    # Convert to lowercase
-    text = text.lower()
-    # Remove punctuation
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    # Tokenize
-    tokens = word_tokenize(text)
-    # Remove stopwords and non-alphabetic tokens
-    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
-    return tokens
+# Summarize each conversation
+conversation_summaries = {}
+for cid, messages in conversations.items():
+    conversation_text = ' '.join(messages)
+    summary = summarizer(conversation_text, max_length=50, min_length=25, do_sample=False)[0]['summary_text']
+    conversation_summaries[cid] = summary
 
-# Apply preprocessing to the data
-processed_data = [preprocess(text) for text in data]
+# Display the first few summaries
+for cid, summary in conversation_summaries.items():
+    print(f"Conversation ID: {cid}")
+    print(f"Summary: {summary}\n")
 
-# Create a dictionary and corpus for LDA
-dictionary = corpora.Dictionary(processed_data)
-corpus = [dictionary.doc2bow(text) for text in processed_data]
 
-# Set the number of topics
-num_topics = 5
 
-# Train the LDA model
-lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
 
-# Function to print topics in a readable format
-def print_topics(model, num_topics, num_words):
-    for i in range(num_topics):
-        words = model.show_topic(i, num_words)
-        print(f"Topic {i+1}:")
-        print(", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]))
-        print()
-
-# Print the topics with clearer formatting
-print_topics(lda_model, num_topics, 10)
-
-# Assign dominant topic to each document
-dominant_topics = []
-
-for bow in corpus:
-    doc_topics = lda_model.get_document_topics(bow)
-    dominant_topic = max(doc_topics, key=lambda x: x[1])[0]
-    dominant_topics.append(dominant_topic)
-
-# Add the dominant topic and week number to the dataframe
-df['dominant_topic'] = dominant_topics
-
-# Calculate the topic distribution by week
-topic_counts_by_week = df.groupby(['wk_num', 'dominant_topic']).size().unstack(fill_value=0)
-topic_counts_by_week.columns = [f"Topic {i+1}" for i in topic_counts_by_week.columns]
-
-# Create the heatmap
-plt.figure(figsize=(12, 8))
-sns.heatmap(topic_counts_by_week, annot=True, cmap="YlGnBu", cbar_kws={'label': 'Document Count'})
-plt.title("Topic Distribution by Week")
-plt.xlabel("Topics")
-plt.ylabel("Week Number")
-plt.show()
