@@ -1,38 +1,4 @@
 import pandas as pd
-
-# Sample data creation
-data = {
-    'conversationid': [1, 1, 1, 1, 1, 2, 2, 2, 2],
-    'sequence#': [1, 2, 3, 4, 5, 1, 2, 3, 4],
-    'sender': ['customer', 'agent', 'customer', 'agent', 'customer', 'customer', 'agent', 'customer', 'agent'],
-    'message': [
-        "Hi, I need help with my order.",
-        "Sure, I'd be happy to help. Can you please provide your order number?",
-        "My order number is 67890.",
-        "Thank you. I see that your order has been delayed due to shipping issues.",
-        "Oh no, when can I expect it to arrive?",
-        "I can't log into my account.",
-        "Let me assist you with that. Can you please provide your username?",
-        "My username is johndoe123.",
-        "Thank you. I have reset your password. Please check your email for the new password."
-    ]
-}
-
-# Convert to DataFrame
-df = pd.DataFrame(data)
-
-# Save to CSV for testing
-df.to_csv('sample_chat_data.csv', index=False)
-
-
-
-
-
-
-
-
-
-import pandas as pd
 from transformers import pipeline
 from collections import defaultdict
 
@@ -46,7 +12,8 @@ conversations = defaultdict(list)
 # Group messages by conversationid
 for _, row in df.iterrows():
     conversation_id = row['conversationid']
-    message = row['message']
+    sender = row['sender']
+    message = f"{sender.capitalize()}: {row['message']}"
     conversations[conversation_id].append(message)
 
 # Load the summarization pipeline
@@ -56,6 +23,8 @@ summarizer = pipeline("summarization")
 conversation_summaries = {}
 for cid, messages in conversations.items():
     conversation_text = ' '.join(messages)
+    # Avoid duplicate messages in abandoned chats
+    conversation_text = ' '.join(dict.fromkeys(conversation_text.split()))
     summary = summarizer(conversation_text, max_length=50, min_length=25, do_sample=False)[0]['summary_text']
     conversation_summaries[cid] = summary
 
@@ -63,7 +32,3 @@ for cid, messages in conversations.items():
 for cid, summary in conversation_summaries.items():
     print(f"Conversation ID: {cid}")
     print(f"Summary: {summary}\n")
-
-
-
-
