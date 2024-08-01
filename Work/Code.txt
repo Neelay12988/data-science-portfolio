@@ -1,34 +1,116 @@
 import pandas as pd
-from transformers import pipeline
-from collections import defaultdict
+import gensim
+from gensim import corpora
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+import string
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Read the sample CSV file
-file_path = 'sample_chat_data.csv'
-df = pd.read_csv(file_path)
+# Load data
+df = pd.read_csv('file.csv')
 
-# Initialize a dictionary to hold conversations
-conversations = defaultdict(list)
+# Ensure NLTK stopwords are downloaded
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
 
-# Group messages by conversationid
-for _, row in df.iterrows():
-    conversation_id = row['conversationid']
-    sender = row['sender']
-    message = f"{sender.capitalize()}: {row['message']}"
-    conversations[conversation_id].append(message)
+# Extract necessary columns
+data = df[['conversationid', 'transcript_keywords', 'wk_num', 'duration', 'skill']].dropna()
 
-# Load the summarization pipeline
-summarizer = pipeline("summarization")
+# Preprocessing function
+stop_words = set(stopwords.words('english'))
 
-# Summarize each conversation
-conversation_summaries = {}
-for cid, messages in conversations.items():
-    conversation_text = ' '.join(messages)
-    # Avoid duplicate messages in abandoned chats
-    conversation_text = ' '.join(dict.fromkeys(conversation_text.split()))
-    summary = summarizer(conversation_text, max_length=50, min_length=25, do_sample=False)[0]['summary_text']
-    conversation_summaries[cid] = summary
+def preprocess(text):
+    # Convert to lowercase
+    text = text.lower()
+    # Remove punctuation
+    text = text.translate(str.maketrans('', '', string.punctuation))
+    # Tokenize
+    tokens = word_tokenize(text)
+    # Remove stopwords and non-alphabetic tokens
+    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
+    return tokens
 
-# Display the first few summaries
-for cid, summary in conversation_summaries.items():
-    print(f"Conversation ID: {cid}")
-    print(f"Summary: {summary}\n")
+# Calculate the number of conversations for each skill
+conversation_counts_by_skill = data['skill'].value_counts()
+
+# Set cutoff
+cutoff = 100
+
+# Filter skills based on cutoff
+skills_above_cutoff = conversation_counts_by_skill[conversation_counts_by_skill > cutoff].index
+
+# Perform topic modeling and create heatmaps for each skill meeting the cutoff
+for skill in skills_above_cutoff:
+    print(f"Processing skill: {skill}")
+    
+    # Filter data for the current skill
+    skill_data = data[data['skill'] == skill]
+    
+    # Preprocess transcripts
+    processed_data = [preprocess(text) for text in skill_data['transcript_keywords']]
+    
+    # Create dictionary and corpus for LDA
+    dictionary = corpora.Dictionary(processed_data)
+    corpus = [dictionary.doc2bow(text) for text in processed_data]
+    
+    # Set number of topics
+    num_topics = 5
+    
+    # Train the LDA model
+    lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
+    
+    # Function to print topics in a readable format
+    def print_topics(model, num_topics, num_words):
+        for i in range(num_topics):
+            words = model.show_topic(i, num_words)
+            print(f"Topic {i+1}:")
+            print(", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]))
+            print()
+    
+    # Print the topics with clearer formatting
+    print_topics(lda_model, num_topics, 10)
+    
+    # Assign dominant topic to each document
+    dominant_topics = []
+
+    for bow in corpus:
+        doc_topics = lda_model.get_document_topics(bow)
+        dominant_topic = max(doc_topics, key=lambda x: x[1])[0]
+        dominant_topics.append(dominant_topic)
+    
+    # Add the dominant topic to the dataframe
+    skill_data['dominant_topic'] = dominant_topics
+    
+    # Calculate the topic distribution by week
+    topic_counts_by_week = skill_data.groupby(['wk_num', 'dominant_topic']).size().unstack(fill_value=0)
+    topic_counts_by_week.columns = [f"Topic {i+1}" for i in topic_counts_by_week.columns]
+    
+    # Add grand totals
+    topic_counts_by_week['Total'] = topic_counts_by_week.sum(axis=1)
+    topic_counts_by_week.loc['Total'] = topic_counts_by_week.sum()
+    
+    # Create the heatmap for topic distribution
+    plt.figure(figsize=(14, 10))
+    sns.heatmap(topic_counts_by_week, annot=True, fmt="d", cmap="YlGnBu", cbar_kws={'label': 'Document Count'})
+    plt.title(f"Topic Distribution by Week for Skill: {skill}")
+    plt.xlabel("Topics")
+    plt.ylabel("Week Number")
+    plt.show()
+    
+    # Calculate average duration for each topic by week
+    average_duration_by_week_topic = skill_data.groupby(['wk_num', 'dominant_topic'])['duration'].mean().unstack(fill_value=0)
+    average_duration_by_week_topic.columns = [f"Topic {i+1}" for i in average_duration_by_week_topic.columns]
+    
+    # Add grand totals
+    average_duration_by_week_topic['Average'] = average_duration_by_week_topic.mean(axis=1)
+    average_duration_by_week_topic.loc['Average'] = average_duration_by_week_topic.mean()
+    
+    # Create the heatmap for average duration
+    plt.figure(figsize=(14, 10))
+    sns.heatmap(average_duration_by_week_topic, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Average Duration'})
+    plt.title(f"Average Duration by Topic and Week for Skill: {skill}")
+    plt.xlabel("Topics")
+    plt.ylabel("Week Number")
+    plt.show()
