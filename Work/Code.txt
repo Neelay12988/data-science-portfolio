@@ -6,6 +6,8 @@ from nltk.tokenize import word_tokenize
 import string
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+import os
 
 # Load data
 df = pd.read_csv('file.csv')
@@ -41,6 +43,10 @@ cutoff = 100
 # Filter skills based on cutoff
 skills_above_cutoff = conversation_counts_by_skill[conversation_counts_by_skill > cutoff].index
 
+# Create a directory to save the outputs
+output_dir = 'skill_outputs'
+os.makedirs(output_dir, exist_ok=True)
+
 # Perform topic modeling and create heatmaps for each skill meeting the cutoff
 for skill in skills_above_cutoff:
     print(f"Processing skill: {skill}")
@@ -62,15 +68,16 @@ for skill in skills_above_cutoff:
     lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
     
     # Function to print topics in a readable format
-    def print_topics(model, num_topics, num_words):
+    def get_topics_text(model, num_topics, num_words):
+        topic_summary = ""
         for i in range(num_topics):
             words = model.show_topic(i, num_words)
-            print(f"Topic {i+1}:")
-            print(", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]))
-            print()
+            topic_summary += f"Topic {i+1}:\n"
+            topic_summary += ", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]) + "\n\n"
+        return topic_summary
     
-    # Print the topics with clearer formatting
-    print_topics(lda_model, num_topics, 10)
+    # Get the topics text
+    topics_text = get_topics_text(lda_model, num_topics, 10)
     
     # Assign dominant topic to each document
     dominant_topics = []
@@ -91,14 +98,6 @@ for skill in skills_above_cutoff:
     topic_counts_by_week['Total'] = topic_counts_by_week.sum(axis=1)
     topic_counts_by_week.loc['Total'] = topic_counts_by_week.sum()
     
-    # Create the heatmap for topic distribution
-    plt.figure(figsize=(14, 10))
-    sns.heatmap(topic_counts_by_week, annot=True, fmt="d", cmap="YlGnBu", cbar_kws={'label': 'Document Count'})
-    plt.title(f"Topic Distribution by Week for Skill: {skill}")
-    plt.xlabel("Topics")
-    plt.ylabel("Week Number")
-    plt.show()
-    
     # Calculate average duration for each topic by week
     average_duration_by_week_topic = skill_data.groupby(['wk_num', 'dominant_topic'])['duration'].mean().unstack(fill_value=0)
     average_duration_by_week_topic.columns = [f"Topic {i+1}" for i in average_duration_by_week_topic.columns]
@@ -107,10 +106,30 @@ for skill in skills_above_cutoff:
     average_duration_by_week_topic['Average'] = average_duration_by_week_topic.mean(axis=1)
     average_duration_by_week_topic.loc['Average'] = average_duration_by_week_topic.mean()
     
-    # Create the heatmap for average duration
-    plt.figure(figsize=(14, 10))
-    sns.heatmap(average_duration_by_week_topic, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Average Duration'})
-    plt.title(f"Average Duration by Topic and Week for Skill: {skill}")
-    plt.xlabel("Topics")
-    plt.ylabel("Week Number")
-    plt.show()
+    # Save topics and heatmaps to a single PDF file
+    pdf_path = os.path.join(output_dir, f"{skill}_analysis.pdf")
+    with PdfPages(pdf_path) as pdf:
+        # Add topics text as the first page
+        fig, ax = plt.subplots(figsize=(8.5, 11))
+        ax.text(0.5, 0.5, topics_text, transform=ax.transAxes, fontsize=12, va='center', ha='center', wrap=True)
+        ax.axis('off')
+        pdf.savefig(fig)
+        plt.close(fig)
+        
+        # Add topic distribution heatmap
+        fig, ax = plt.subplots(figsize=(14, 10))
+        sns.heatmap(topic_counts_by_week, annot=True, fmt="d", cmap="YlGnBu", cbar_kws={'label': 'Document Count'}, ax=ax)
+        ax.set_title(f"Topic Distribution by Week for Skill: {skill}")
+        ax.set_xlabel("Topics")
+        ax.set_ylabel("Week Number")
+        pdf.savefig(fig)
+        plt.close(fig)
+        
+        # Add average duration heatmap
+        fig, ax = plt.subplots(figsize=(14, 10))
+        sns.heatmap(average_duration_by_week_topic, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Average Duration'}, ax=ax)
+        ax.set_title(f"Average Duration by Topic and Week for Skill: {skill}")
+        ax.set_xlabel("Topics")
+        ax.set_ylabel("Week Number")
+        pdf.savefig(fig)
+        plt.close(fig)
