@@ -1,135 +1,18 @@
-import pandas as pd
-import gensim
-from gensim import corpora
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import string
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import os
+1. Introduction to Topic Modeling
 
-# Load data
-df = pd.read_csv('file.csv')
+    What is Topic Modeling?
+        Simple Definition: "Topic modeling is a machine learning technique that automatically discovers the themes or topics present in a collection of documents."
+        Real-World Example: "Imagine you have a huge stack of customer feedback forms. Topic modeling helps you quickly identify the key themes customers are talking about, such as product quality, customer service, or pricing."
 
-# Ensure NLTK stopwords are downloaded
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
+2. Introducing LDA
 
-# Extract necessary columns
-data = df[['conversationid', 'transcript_keywords', 'wk_num', 'duration', 'skill']].dropna()
+    What is LDA?
+        Simple Definition: "LDA is a popular algorithm for topic modeling. It stands for Latent Dirichlet Allocation."
+        Core Idea: "LDA assumes that each document (like a customer feedback form or an email) is made up of multiple topics, and each topic is made up of words. LDA figures out the mixture of topics within each document and the most important words for each topic."
 
-# Preprocessing function
-stop_words = set(stopwords.words('english'))
+3. How LDA Works (High-Level Overview)
 
-def preprocess(text):
-    # Convert to lowercase
-    text = text.lower()
-    # Remove punctuation
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    # Tokenize
-    tokens = word_tokenize(text)
-    # Remove stopwords and non-alphabetic tokens
-    tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
-    return tokens
-
-# Calculate the number of conversations for each skill
-conversation_counts_by_skill = data['skill'].value_counts()
-
-# Set cutoff
-cutoff = 100
-
-# Filter skills based on cutoff
-skills_above_cutoff = conversation_counts_by_skill[conversation_counts_by_skill > cutoff].index
-
-# Create a directory to save the outputs
-output_dir = 'skill_outputs'
-os.makedirs(output_dir, exist_ok=True)
-
-# Perform topic modeling and create heatmaps for each skill meeting the cutoff
-for skill in skills_above_cutoff:
-    print(f"Processing skill: {skill}")
-    
-    # Filter data for the current skill
-    skill_data = data[data['skill'] == skill]
-    
-    # Preprocess transcripts
-    processed_data = [preprocess(text) for text in skill_data['transcript_keywords']]
-    
-    # Create dictionary and corpus for LDA
-    dictionary = corpora.Dictionary(processed_data)
-    corpus = [dictionary.doc2bow(text) for text in processed_data]
-    
-    # Set number of topics
-    num_topics = 5
-    
-    # Train the LDA model
-    lda_model = gensim.models.LdaModel(corpus, num_topics=num_topics, id2word=dictionary, passes=15)
-    
-    # Function to print topics in a readable format
-    def get_topics_text(model, num_topics, num_words):
-        topic_summary = ""
-        for i in range(num_topics):
-            words = model.show_topic(i, num_words)
-            topic_summary += f"Topic {i+1}:\n"
-            topic_summary += ", ".join([f"{word[0]} ({word[1]:.2f})" for word in words]) + "\n\n"
-        return topic_summary
-    
-    # Get the topics text
-    topics_text = get_topics_text(lda_model, num_topics, 10)
-    
-    # Assign dominant topic to each document
-    dominant_topics = []
-
-    for bow in corpus:
-        doc_topics = lda_model.get_document_topics(bow)
-        dominant_topic = max(doc_topics, key=lambda x: x[1])[0]
-        dominant_topics.append(dominant_topic)
-    
-    # Add the dominant topic to the dataframe
-    skill_data['dominant_topic'] = dominant_topics
-    
-    # Calculate the topic distribution by week
-    topic_counts_by_week = skill_data.groupby(['wk_num', 'dominant_topic']).size().unstack(fill_value=0)
-    topic_counts_by_week.columns = [f"Topic {i+1}" for i in topic_counts_by_week.columns]
-    
-    # Add grand totals
-    topic_counts_by_week['Total'] = topic_counts_by_week.sum(axis=1)
-    topic_counts_by_week.loc['Total'] = topic_counts_by_week.sum()
-    
-    # Calculate average duration for each topic by week
-    average_duration_by_week_topic = skill_data.groupby(['wk_num', 'dominant_topic'])['duration'].mean().unstack(fill_value=0)
-    average_duration_by_week_topic.columns = [f"Topic {i+1}" for i in average_duration_by_week_topic.columns]
-    
-    # Add grand totals
-    average_duration_by_week_topic['Average'] = average_duration_by_week_topic.mean(axis=1)
-    average_duration_by_week_topic.loc['Average'] = average_duration_by_week_topic.mean()
-    
-    # Save topics and heatmaps to a single PDF file
-    pdf_path = os.path.join(output_dir, f"{skill}_analysis.pdf")
-    with PdfPages(pdf_path) as pdf:
-        # Add topics text as the first page
-        fig, ax = plt.subplots(figsize=(8.5, 11))
-        ax.text(0.5, 0.5, topics_text, transform=ax.transAxes, fontsize=12, va='center', ha='center', wrap=True)
-        ax.axis('off')
-        pdf.savefig(fig)
-        plt.close(fig)
-        
-        # Add topic distribution heatmap
-        fig, ax = plt.subplots(figsize=(14, 10))
-        sns.heatmap(topic_counts_by_week, annot=True, fmt="d", cmap="YlGnBu", cbar_kws={'label': 'Document Count'}, ax=ax)
-        ax.set_title(f"Topic Distribution by Week for Skill: {skill}")
-        ax.set_xlabel("Topics")
-        ax.set_ylabel("Week Number")
-        pdf.savefig(fig)
-        plt.close(fig)
-        
-        # Add average duration heatmap
-        fig, ax = plt.subplots(figsize=(14, 10))
-        sns.heatmap(average_duration_by_week_topic, annot=True, fmt=".2f", cmap="YlGnBu", cbar_kws={'label': 'Average Duration'}, ax=ax)
-        ax.set_title(f"Average Duration by Topic and Week for Skill: {skill}")
-        ax.set_xlabel("Topics")
-        ax.set_ylabel("Week Number")
-        pdf.savefig(fig)
-        plt.close(fig)
+    Documents as Mixtures of Topics:
+        Example: "A customer review might mostly talk about product quality (Topic A) and a little bit about delivery service (Topic B). LDA can identify that mix."
+    Topics as Mixtures of Words:
+        Example: "The 'Product Quality' topic might frequently include words like 'durable,' 'reliable,' and 'quality.' LDA finds these words that are important to each topic.
