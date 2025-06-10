@@ -1,0 +1,89 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import statsmodels.api as sm
+from scipy.stats import ttest_ind, f_oneway, zscore, chi2_contingency, skew, kurtosis
+from sklearn.cluster import KMeans
+import scipy.stats as stats
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Assuming your dataframe is called df and it's already loaded
+
+# Filter for outbound calls
+df_outbound = df[df['direction'] == 'outbound']
+
+# 1. Descriptive Statistics
+print("Descriptive Statistics for Outbound Call Durations:")
+print(df_outbound['duration'].describe())
+
+# 2. Correlation Analysis
+print("\nCorrelation between Duration and Interaction Duration:")
+print(df_outbound[['duration', 'interaction duration']].corr())
+
+# 3. T-test: Compare Outbound vs Inbound Call Durations
+outbound_calls = df[df['direction'] == 'outbound']['duration']
+inbound_calls = df[df['direction'] == 'inbound']['duration']
+ttest_result = ttest_ind(outbound_calls, inbound_calls)
+print("\nT-test Result (Outbound vs Inbound):")
+print(ttest_result)
+
+# 4. ANOVA: Outbound Call Durations by Day Name
+days = [df_outbound[df_outbound['day name'] == day]['duration'] for day in df_outbound['day name'].unique()]
+anova_result = f_oneway(*days)
+print("\nANOVA Result for Outbound Call Durations by Day Name:")
+print(anova_result)
+
+# 5. Linear Regression: Call Duration vs Interaction Duration, Day Name, Org
+df_outbound['fiscal date'] = pd.to_datetime(df_outbound['fiscal date'])
+X = pd.get_dummies(df_outbound[['interaction duration', 'day name', 'org']], drop_first=True)
+y = df_outbound['duration']
+X = sm.add_constant(X)  # Add constant to the model
+model = sm.OLS(y, X).fit()
+print("\nLinear Regression Summary (Duration vs Interaction Duration, Day Name, Org):")
+print(model.summary())
+
+# 6. Time Series Analysis: Trend, Seasonal, and Residual Components
+df_outbound.set_index('fiscal date', inplace=True)
+df_outbound_resampled = df_outbound['duration'].resample('D').mean()
+result = seasonal_decompose(df_outbound_resampled, model='additive')
+result.plot()
+plt.show()
+
+# 7. Outlier Detection: Z-Score
+df_outbound['zscore'] = zscore(df_outbound['duration'])
+outliers = df_outbound[df_outbound['zscore'].abs() > 3]
+print("\nOutliers based on Z-score:")
+print(outliers)
+
+# 8. Outlier Detection: IQR Method
+Q1 = df_outbound['duration'].quantile(0.25)
+Q3 = df_outbound['duration'].quantile(0.75)
+IQR = Q3 - Q1
+outliers_iqr = df_outbound[(df_outbound['duration'] < (Q1 - 1.5 * IQR)) | (df_outbound['duration'] > (Q3 + 1.5 * IQR))]
+print("\nOutliers based on IQR Method:")
+print(outliers_iqr)
+
+# 9. Chi-Square Test: Day Name vs Org
+contingency_table = pd.crosstab(df_outbound['day name'], df_outbound['org'])
+chi2_result = chi2_contingency(contingency_table)
+print("\nChi-Square Test Result (Day Name vs Org):")
+print(chi2_result)
+
+# 10. Distribution Fitting: Exponential Distribution
+params = stats.expon.fit(df_outbound['duration'])
+stats.probplot(df_outbound['duration'], dist="expon", sparams=params, plot=plt)
+plt.title('Exponential Distribution Fit')
+plt.show()
+
+# 11. K-means Clustering: Grouping Calls by Duration and Interaction Duration
+kmeans = KMeans(n_clusters=3)
+df_outbound['cluster'] = kmeans.fit_predict(df_outbound[['duration', 'interaction duration']])
+plt.figure(figsize=(10,6))
+sns.scatterplot(x='interaction duration', y='duration', hue='cluster', data=df_outbound)
+plt.title('Clustering of Outbound Call Durations')
+plt.show()
+
+# 12. Skewness and Kurtosis
+print("\nSkewness and Kurtosis of Outbound Call Durations:")
+print(f"Skewness: {skew(df_outbound['duration'])}")
+print(f"Kurtosis: {kurtosis(df_outbound['duration'])}")
